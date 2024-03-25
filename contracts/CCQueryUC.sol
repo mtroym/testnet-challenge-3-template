@@ -46,9 +46,13 @@ contract CCQueryUC is UniversalChanIbcApp {
         // See onRecvUniversalPacket for the expected packet format in https://forum.polymerlabs.org/t/challenge-3-cross-contract-query-with-polymer/475
         // Steps:
         // 1. Encode the caller's address and the query string into a payload
+        bytes memory payload = abi.encode(msg.sender, "crossChainQuery");
         // 2. Set the timeout timestamp at 10h from now
+        uint64 timeoutTimestamp = uint64((block.timestamp + timeoutSeconds) * 1000000000);
         // 3. Call the IbcUniversalPacketSender to send the packet
-
+        IbcUniversalPacketSender(mw).sendUniversalPacket(
+            channelId, IbcUtils.toBytes32(destPortAddr), payload, timeoutTimestamp
+        );
         // Example of how to properly encode, set timestamp and send a packet can be found in XCounterUC.sol
     }
 
@@ -113,7 +117,9 @@ contract CCQueryUC is UniversalChanIbcApp {
         // Steps:
         // 1. Decode the counter from the ack packet
         // 2. Emit a LogAcknowledgement event with the message
-
+        ackPackets.push(UcAckWithChannel(channelId, packet, ack));
+        string memory ack_message = abi.decode(ack.data, (string));
+        emit LogAcknowledgement(ack_message);
         // An example of how to properly decode and handle an ack packet can be found in XCounterUC.sol
     }
 
